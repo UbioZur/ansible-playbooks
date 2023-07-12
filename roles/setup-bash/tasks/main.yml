@@ -1,0 +1,109 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+
+- name: Assert Role Requirements
+  tags: always
+  ansible.builtin.assert:
+    that:
+      - setup_bash_user is defined
+    quiet: true
+
+
+- name: Ensure Bash Is Installed
+  become: true
+  tags: bash
+  ansible.builtin.package:
+    name:
+      - "bash"
+    state: present
+
+
+- name: Get Information From User
+  become: true
+  tags: bash, bash-dotfiles
+  ansible.builtin.user:
+    name: "{{ setup_bash_user }}"
+    state: present
+  register: _setup_bash_userdata
+
+
+- name: Ensure User Folders Exist
+  become: true
+  tags: bash, bash-dotfiles
+  ansible.builtin.file:
+    mode: "700"
+    owner: "{{ setup_bash_user }}"
+    group: "{{ setup_bash_user }}"
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ _setup_bash_userdata.home }}/{{ setup_bash_config_dir }}"
+    - "{{ _setup_bash_userdata.home }}/{{ setup_bash_wget_config_dir }}"
+
+- name: Add Bash Config To User
+  become: true
+  tags: bash, bash-dotfiles
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ setup_bash_user }}"
+    group: "{{ setup_bash_user }}"
+    mode: "600"
+  with_items:
+    - { src: 'home/config/bash/bashrc.j2',
+        dest: '{{ _setup_bash_userdata.home }}/{{ setup_bash_config_dir }}/bashrc' }
+    - { src: 'home/config/wget/wgetrc.j2',
+        dest: '{{ _setup_bash_userdata.home }}/{{ setup_bash_wget_config_dir }}/wgetrc' }
+    - { src: 'home/profile.j2',
+        dest: '{{ _setup_bash_userdata.home }}/.profile' }
+
+- name: Check .bashrc Is Symlink
+  become: true
+  tags: bash, bash-dotfiles
+  ansible.builtin.stat:
+    path: "{{ _setup_bash_userdata.home }}/.bashrc"
+  register: _setup_bash_bashrc_stat
+
+- name: Manage $HOME/.bashrc File
+  become: true
+  tags: bash, bash-dotfiles
+  when:
+    _setup_bash_bashrc_stat.stat.islnk is not defined
+    or not _setup_bash_bashrc_stat.stat.islnk
+  block:
+
+    - name: Remove Original .bashrc File
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ _setup_bash_userdata.home }}/.bashrc"
+
+    - name: Create Symlinks For .bashrc
+      when:
+        _setup_bash_bashrc_stat.stat.islnk is not defined
+        or not _setup_bash_bashrc_stat.stat.islnk
+      ansible.builtin.file:
+        follow: false
+        mode: "600"
+        owner: "{{ setup_bash_user }}"
+        group: "{{ setup_bash_user }}"
+        path: "{{ item.dest }}"
+        src: "{{ item.src }}"
+        state: link
+      with_items:
+        - { src: '{{ _setup_bash_userdata.home }}/{{ setup_bash_config_dir }}/bashrc',
+            dest: '{{ _setup_bash_userdata.home }}/.bashrc' }
+
+- name: Remove Unneccessary Bash Files
+  become: true
+  tags: bash, bash-dotfiles
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ _setup_bash_userdata.home }}/.bash_logout"
+    - "{{ _setup_bash_userdata.home }}/.bash_history"
+    - "{{ _setup_bash_userdata.home }}/.bash_profile"
+    - "{{ _setup_bash_userdata.home }}/.wget-hsts"

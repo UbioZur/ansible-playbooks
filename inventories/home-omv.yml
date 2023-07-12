@@ -1,0 +1,46 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+##    Open Media Vault Home Server
+## Use Case:  NAS / Dockers Host
+
+
+all:
+  hosts:
+    home-omv:
+
+      ## ---------------------------------------
+      ## Networking Related Setting
+      ## ---------------------------------------
+      srv_hostname: omv
+      srv_domain: "home.{{ vault_domain_name }}"
+      srv_fqdn: "{{ srv_hostname }}.{{ srv_domain }}"
+      srv_local_ip: 172.30.11.10
+      srv_local_subnet: 172.30.11.0/24
+
+      ## ---------------------------------------
+      ## Ansible settings
+      ## ---------------------------------------
+      ansible_host: "{{ srv_local_ip }}"
+      ansible_connection: ssh
+      ansible_port: "{{ vault_ssh_port }}"
+      ansible_user: "{{ vault_omv_user.username }}"
+      ansible_ssh_private_key_file: "{{ vault_omv_user.privkey }}"
+
+      ## ---------------------------------------
+      ## Time settings
+      ## ---------------------------------------
+      srv_timezone: "UTC"
+      srv_location: "Japan/Tokyo"
+
+servers:
+  hosts:
+    home-omv:
+
+omv:
+  hosts:
+    home-omv:
+
+home:
+  hosts:
+    home-omv:

@@ -1,0 +1,102 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+# This playbook configure the CLI part of an Open Media Vault server.
+# SSH configuration should be done by the webui to remove password access.
+# Make sure to setup your ssh key to the server: `ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server`
+
+
+- name: Open Media Vault Setup
+  hosts: omv
+  gather_facts: false
+
+
+  # Import the vault file to have access to passwords and other private data.
+  vars_files:
+    - ../vault/main.yml
+
+
+  # Setup the become pass for ansible depending if the user is the ansible or the admin user.
+  vars:
+    ansible_become_pass: "{{ vault_ansible_user.pass if ansible_user == vault_ansible_user.username else vault_omv_user.pass }}"
+
+
+  pre_tasks:
+
+    - name: Gather Needed Facts
+      tags: always
+      ansible.builtin.setup:
+        gather_subset:
+          - '!min'
+          - 'os_family'
+
+
+  tasks:
+
+    - name: Include Role upgrade-packages
+      tags: upgrade
+      ansible.builtin.include_role:
+        name: upgrade-packages
+
+    - name: Include Role install-commons
+      tags: common-pkgs
+      ansible.builtin.include_role:
+        name: install-commons
+
+    - name: Check Open Media Vault Extras Is Installed
+      tags: omv-extra
+      become: true
+      vars:
+        _omv_setup_omvextras_pkg: openmediavault-omvextrasorg
+      ansible.builtin.command: dpkg-query -l "{{ _omv_setup_omvextras_pkg }}"
+      register: _omv_setup_omvextras_pkginstaled
+      ignore_errors: true      # dpkg return 1 (error) when no packages are found.
+      changed_when: false      # There is no change to the system, we are just checking if a package is installed.
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Open Media Vault Extras
+      tags: omv-extra
+      become: true
+      vars:
+        _omv_setup_omvextras_script_path: "/root/omv-extra-install"
+      when: _omv_setup_omvextras_pkginstaled is failed
+      block:
+
+        - name: Download Open Media Vault Extras Install Script
+          ansible.builtin.get_url:
+            url: https://github.com/OpenMediaVault-Plugin-Developers/installScript/raw/master/install
+            dest: "{{ _omv_setup_omvextras_script_path }}"
+            mode: '0700'
+
+        - name: Run Open Media Vault Extras Script
+          ansible.builtin.command: "bash {{ _omv_setup_omvextras_script_path }}"
+          changed_when: true
+
+        - name: Cleanup Open Media Vault Extra Script
+          ansible.builtin.file:
+            path: "{{ _omv_setup_omvextras_script_path }}"
+            state: absent
+
+
+    - name: Add Public SSH Key To Root User Authorized Key
+      tags: sshkey
+      ansible.posix.authorized_key:
+        user: "{{ vault_omv_user.username }}"
+        state: present
+        key: "{{ lookup('file', '{{ vault_omv_user.pubkey }}') }}"
+        manage_dir: true
+
+    - name: Include Role setup-bash
+      tags: bash, bash-dotfiles
+      vars:
+        setup_bash_user: "{{ vault_omv_user.username }}"
+      ansible.builtin.include_role:
+        name: setup-bash
+
+
+  post_tasks:
+
+    - name: Open Media Vault Configuration
+      tags: always
+      ansible.builtin.debug:
+        msg: "Configurations for Open Media Vault are best done with the webui. Make sure you configure the rest of OMV with its interface."

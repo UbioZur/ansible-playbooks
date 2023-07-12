@@ -1,0 +1,48 @@
+#!/usr/bin/sh
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+## Add the hook to the git repo: git config --local core.hooksPath .githooks
+
+# If any command fails, exit immediately with that command's exit status
+set -eo
+
+# Redirect output to stderr.
+exec 1>&2
+
+ERROR=0
+
+
+# Exit the script with an error message!
+die() {
+    echo "ERROR: ${1-"We have encountered an error!"}"
+    exit "${2-1}"
+}
+
+# Check that playbooks have a documentation files
+check_playbooks_docs() {
+    for playbook in $(basename -s .yml -a  $(/usr/bin/ls playbooks/*.yml)); do
+        if [ ! -f "docs/${playbook}.md" ]; then
+            echo "ERROR: Playbook 'playbook/${playbook}.yml' does not have an associated documentation in 'docs/${playbook}.md'!"
+            ERROR=$(($ERROR+2))
+        fi
+    done
+}
+
+# Check that roles have a readme files
+check_roles_readme() {
+    for role in $(/usr/bin/ls -d roles/*/); do
+        if [ ! -f "${role}/README.md" ]; then
+            echo "ERROR: Role '${role}' does not have an associated readme file!"
+            ERROR=$(($ERROR+3))
+        fi
+    done
+}
+
+
+# Check for documentations
+check_playbooks_docs
+check_roles_readme
+
+
+# Exit with the proper return code (0 if success)
+exit $ERROR

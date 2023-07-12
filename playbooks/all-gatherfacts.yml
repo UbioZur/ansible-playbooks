@@ -1,0 +1,63 @@
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+# This playbook gather facts from all the inventory servers, and write them in a file inside ../facts/server.json
+
+
+- name: Gather Facts To File
+  hosts: all
+  gather_facts: false
+
+  vars_files:
+    - ../vault/main.yml
+
+  tasks:
+
+    - name: Clean Local Facts Directory
+      tags: all, clean
+      ansible.builtin.file:
+        path: ../facts
+        state: absent
+        mode: '640'
+      delegate_to: localhost
+
+    - name: Create Local Facts Directory
+      tags: all, facts, pkgs
+      ansible.builtin.file:
+        path: ../facts
+        state: directory
+        mode: '750'
+      register: local_dir
+      delegate_to: localhost
+
+    - name: Gather Server Facts
+      tags: all, facts
+      block:
+
+        - name: Gather Needed Facts
+          tags: all, facts
+          ansible.builtin.setup:
+            gather_subset:
+              - 'all'
+
+        - name: Save Facts To JSON File
+          ansible.builtin.copy:
+            content: "{{ ansible_facts | to_nice_json }}"
+            dest: "{{ local_dir.path }}/{{ ansible_fqdn }}.json"
+            mode: '640'
+          delegate_to: localhost
+
+
+    - name: Gather Packages Facts
+      tags: all, pkgs
+      block:
+
+        - name: Gather Installed Packages Facts
+          ansible.builtin.package_facts:
+            manager: auto
+
+        - name: Save Facts To JSON File
+          ansible.builtin.copy:
+            content: "{{ ansible_facts.packages | to_nice_json }}"
+            dest: "{{ local_dir.path }}/{{ ansible_fqdn }}_pkgs.json"
+            mode: '0640'
+          delegate_to: localhost

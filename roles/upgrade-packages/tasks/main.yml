@@ -1,0 +1,50 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+
+- name: Assert Role Requirements
+  tags: always
+  ansible.builtin.assert:
+    that:
+      ansible_os_family == "RedHat" or
+      ansible_os_family == "Debian"
+    quiet: true
+
+
+- name: Debian Based Distributions
+  become: true
+  tags: upgrade
+  when: ansible_os_family == "Debian"
+  block:
+
+    - name: Upgrade The Packages [APT]
+      ansible.builtin.apt:
+        name: "*"
+        state: latest  # noqa: package-latest
+        update_cache: true
+      notify: System | reboot needed
+
+    - name: Clean Packages [APT]
+      ansible.builtin.apt:
+        autoclean: true
+        autoremove: true
+      notify: System | reboot needed
+
+
+- name: RedHat Based Distributions
+  become: true
+  tags: upgrade
+  when: ansible_os_family == "RedHat"
+  block:
+
+    - name: Upgrade The Packages [DNF]
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest  # noqa: package-latest
+        update_cache: true
+      notify: System | reboot needed
+
+    - name: Clean Packages [DNF]
+      ansible.builtin.dnf:
+        autoremove: true
+      notify: System | reboot needed

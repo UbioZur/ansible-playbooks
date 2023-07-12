@@ -1,0 +1,256 @@
+## {{ ansible_managed }} ##
+
+
+## Only load the bash config if running in an interactive shell
+[[ $- != *i* ]] && return
+[ -z "$PS1" ] && return
+
+
+## ---------------------------------------
+## Usefull Environment Variables
+## ---------------------------------------
+
+# Setup XDG Directories
+export XDG_DATA_HOME="${XDG_DATA_HOME-$HOME/.local/share}"
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME-$HOME/.config}"
+export XDG_STATE_HOME="${XDG_STATE_HOME-$HOME/.local/state}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME-$HOME/.cache}"
+
+# Set PATH Environement Variable
+[[ -e /usr/local/bin ]] && PATH=/usr/local/bin:$PATH
+[[ -e ${HOME}/.local/bin ]] && PATH=${HOME}/.local/bin:$PATH
+
+# Set the editor variable to preffered terminal editor
+[[ -x /usr/bin/nano ]] && export EDITOR="/usr/bin/nano"
+[[ -x /usr/bin/micro ]] && export EDITOR="/usr/bin/micro"
+
+# Move config away from home folder
+export WGETRC="$XDG_CONFIG_HOME/wget/wgetrc"
+mkdir -p "$(dirname $WGETRC)"
+export LESSHISTFILE="$XDG_STATE_HOME"/less/history
+mkdir -p "$(dirname $LESSHISTFILE)"
+touch $LESSHISTFILE
+
+# Config I wish could be moved away and keep compatibility.
+export GNUPGHOME="$HOME/.gnupg"
+mkdir -p "$(dirname $GNUPGHOME)"
+export SSHHOME="$HOME/.ssh"
+mkdir -p "$(dirname $SSHHOME)"
+
+# Fix GPG error Inappropriate ioctl for device (https://github.com/keybase/keybase-issues/issues/2798)
+export GPG_TTY=$(tty)
+
+# Grab the dotfile directory.
+DOTFILES="${XDG_CONFIG_HOME-"$HOME/.config"}"
+
+
+## ---------------------------------------
+## Useful Functions
+## ---------------------------------------
+
+# Check if user is in a group. Usage: ingroup group [user]
+ingroup(){ [[ " `id -Gn $2` " == *" $1 "* ]]; }
+
+
+## ---------------------------------------
+## CLI Related Aliases
+## ---------------------------------------
+
+# Add aliases to sudo
+if [[ -x /usr/bin/sudo ]] && [[ $UID != 0 ]]; then
+    alias sudo="/usr/bin/sudo "
+fi
+
+# Shorter Clear Alias
+alias clr="/usr/bin/clear"
+
+
+## ---------------------------------------
+## Navigation Related Aliases
+## ---------------------------------------
+
+# Easier navigation: .., ..., ....
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias cd..="cd .."     # Common typo
+
+
+## ---------------------------------------
+## GNU Utils Alternatives Aliases
+## ---------------------------------------
+
+# EXA - LS Rust alternative - [apt/dnf install exa]
+if [ -x /usr/bin/exa ]; then
+    _lscmd="/usr/bin/exa --color=auto --group-directories-first --icons"
+    [ -x /usr/bin/git ] && _git=" --git" || _git=""
+    alias ls="${_lscmd}"               # list listing without hidden files
+    alias ll="${_lscmd}${_git} -lh"    # list listing without hidden files
+    alias la="${_lscmd}${_git} -alh"   # list listing with hidden files
+    alias lt="${_lscmd}${_git} -aTh"   # tree listing
+    alias lg="${_lscmd}${_git} -algh"  # Display group ownership too
+    alias ld="${_lscmd}${_git} -aldh " # Display directories only
+    alias sl="${_lscmd}"               # Common Typo
+    unset _lscmd
+    unset _git
+else
+    # Use old ls instead
+    _lscmd="/usr/bin/ls --color=auto --group-directories-first"
+    alias ls="${_lscmd}"         # list listing without hidden files
+    alias ll="${_lscmd} -lh"     # list listing without hidden files
+    alias la="${_lscmd} -Alh"    # list listing with hidden files
+    alias lt="/usr/bin/tree -aC --dirsfirst"    # tree listing
+    alias lg="${_lscmd} -Algh"   # Display group ownership too
+    alias ld="${_lscmd} -Aldh"   # Display directories only
+    alias sl="${_lscmd}"         # Common Typo
+    unset _lscmd
+fi
+alias ols="/usr/bin/ls --color=auto --group-directories-first"        # Original ls
+
+# RIPGREP - GREP Rust alternative - [apt/dnf install ripgrep]
+if [ -x /usr/bin/rg ]; then
+    alias grep="/usr/bin/rg --color=auto"      # replace grep by ripgrep
+else
+    alias grep="/usr/bin/grep --color=auto"
+fi
+alias ogrep="/usr/bin/grep --color=auto"   # original grep
+
+# BAT - CAT Rust alternative - [apt/dnf install bat]
+if [ -x /usr/bin/batcat ]; then
+    alias cat="/usr/bin/batcat --style=auto"  # replace cat with batcat (Debian)
+elif [ -x /usr/bin/bat ]; then
+    alias cat="/usr/bin/bat --style=auto"     # replace cat with bat (non Debian)
+fi
+alias ocat="/usr/bin/cat"                 # original cat
+
+# FD - FIND Rust alternative - [apt/dnf install fd-find]
+if [ -x /usr/bin/fd ]; then
+    alias find="fd"                # replace find with fd
+fi
+alias ofind="/usr/bin/find"        # original find
+
+
+## ---------------------------------------
+## Common Flags Aliases
+## ---------------------------------------
+
+alias df="/usr/bin/df -h"       # human-readable sizes
+alias free="/usr/bin/free -m"   # show sizes in MB
+alias mkd="/usr/bin/mkdir -pv"	# mkdir create parent directory and verbose each directories created
+alias rm="/usr/bin/rm -I"       # Confirm before deleting more than 3 files
+alias cp="/usr/bin/cp -i"       # Confirm before overwriting
+alias mv="/usr/bin/mv -i"       # Confirm before overwriting
+
+
+## ---------------------------------------
+## Applications Shortcuts Aliases
+## ---------------------------------------
+
+# Git commands
+if [ -x /usr/bin/git ]; then
+    alias {gitc,gitcommit}="/usr/bin/git commit -a -S -m"   # Commit all files, Sign and add message
+    alias {gits,gitstatus}="/usr/bin/git status"            # Display git status
+    alias {gita,gitadd}="/usr/bin/git add -A"               # Add All files to git
+    alias {gitp,gitpush}="/usr/bin/git push"                # Push git
+    alias gitpull="/usr/bin/git pull"                       # Git pull
+fi
+
+# Fast software launch
+[[ -x /usr/bin/micro ]] && alias m="/usr/bin/micro"         # faster way to use micro
+[[ -x /usr/bin/nano ]] && alias n="/usr/bin/nano"           # faster way to use nano
+
+# Docker / Docker-Compose managment
+if [ -x /usr/bin/docker-compose ]; then
+    dockercompose="/usr/bin/docker-compose"
+    docker="/usr/bin/docker"
+
+    # Docker Compose
+    alias dcup="$dockercompose up -d --force-recreate && $dockercompose logs -tf"
+    alias dcdwn="$dockercompose down"
+    alias {dcupt,dcupdate}="$dockercompose pull && $dockercompose up -d --remove-orphans && $docker image prune && $dockercompose logs -tf"
+    alias dclog="$dockercompose logs -tf"
+fi
+
+
+## ---------------------------------------
+## Configure Bash
+## ---------------------------------------
+
+# Move Bash History file away from home
+/usr/bin/mkdir -p "${XDG_STATE_HOME}/bash"
+export HISTFILE=${XDG_STATE_HOME}/bash/bash_history
+# Save 5,000 lines of history in memory
+export HISTSIZE=5000
+# Save 20000 lines of history to disk
+export HISTFILESIZE=20000
+# Add Timestamp to history
+export HISTTIMEFORMAT='%F %T '
+# Ignore redundant and space commands
+export HISTCONTROL=ignoreboth
+# Ignore more common cammands
+export HISTIGNORE=" *:bash:cd:cd ~:cd..:clear:clr:dcup:dcdwn:dcupt:dclog:df:echo \$?:exit:free:history:la:ld:lg:ll:ll /:ll /etc:ls:lt:m:micro:n:nano:ols:pwd:sl:zsh:..:...:...."
+# Append to history instead of overwrite
+shopt -s histappend
+# Multiple commands on one line show up as a single line
+shopt -s cmdhist
+# check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+# enable programmable completion features
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+fi
+
+
+## ---------------------------------------
+## Configure Bash Prompt
+## ---------------------------------------
+
+# Only show path with 2 depth
+export PROMPT_DIRTRIM=2
+
+# Add command to history directly and
+export PROMPT_COMMAND="__prompt_command"
+
+# Create the prompt command
+__prompt_command() {
+    local EXIT="$?" # This needs to be first
+
+    # TODO: Find a way to not append to history file if last command failed, BUT keep it in history list (For Up Arrow access)!
+    history -a;history -n
+
+    local -r Reset='\[\e[0m\]'
+    local -r Bold='\[\e[1m\]'
+
+    local DotsCol='\[\e[33m\]'      # Yellow
+    local TimeCol='\[\e[35m\]'      # Magenta
+    local UserCol='\[\e[34m\]'      # Blue
+    local HostCol='\[\e[34m\]'      # Blue
+    local DirCol='\[\e[32m\]'       # Green
+    local SignCol='\[\e[33m\]'      # Yellow
+    local -r White='\[\e[97m\]'
+
+    local Bullets='●●●'             # Regular system
+    local User=''
+    local Host=''
+
+    if [ $EXIT != 0 ]; then
+        DotsCol='\[\e[31m\]'         # Red if Last Command is Failure.
+    fi
+    if [ $UID == 0 ]; then
+        UserCol='${Bold}\[\e[31m\]' # Bold Red if root user.
+    fi
+    if ! grep 'kthreadd' /proc/2/status &>/dev/null; then
+        Bullets='◆◆◆'               # In Containers, Display Different Bullets
+    fi
+    # If not first user, then show username
+    if [ $UID -ne 1000 ]; then
+        User="${UserCol}\u${Reset} "
+    fi
+    # If remote connection, Show User and Host
+    if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+        Host="${Bold}${White}@${HostCol}\h${Reset} "
+        User="${UserCol}\u${Reset}"
+    fi
+
+    PS1="${TimeCol}\A ${DotsCol}${Bullets} ${User}${Host}${DirCol}\w${SignCol} ⮊ ${Reset}"
+}

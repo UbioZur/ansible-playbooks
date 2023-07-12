@@ -1,0 +1,9 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+
+setup_bash_config_dir: ".config/bash"
+
+setup_bash_wget_config_dir: ".config/wget"
+
+setup_bash_less_history_dir: ".local/state/less"

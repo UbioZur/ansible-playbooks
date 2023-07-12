@@ -1,0 +1,42 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+
+- name: Assert Role Requirements
+  tags: always
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+    quiet: true
+
+
+- name: Install Minimal Packages [APT]
+  become: true
+  tags: common-pkgs
+  ansible.builtin.apt:
+    name:
+      - aptitude
+      - apt-transport-https
+      - bash
+      - bat
+      - ca-certificates
+      - cron
+      - curl
+      - debian-archive-keyring
+      - exa
+      - fd-find
+      - git
+      - gnupg
+      - micro
+      - nano
+      - pciutils
+      - ripgrep
+      - rsync
+      - sudo
+      - udisks2
+      - unzip
+      - wget
+    state: present
+    update_cache: true
+  when:
+    - ansible_os_family == "Debian"

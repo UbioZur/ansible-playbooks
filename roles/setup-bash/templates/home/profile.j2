@@ -1,0 +1,15 @@
+## {{ ansible_managed }} ##
+
+# ~/.profile: executed by Bourne-compatible login shells.
+
+if [ -x "$BASH" ]; then
+    if [ -f ${XDG_CONFIG_HOME-$HOME/.config}/bash/bashrc ]; then
+      . ${XDG_CONFIG_HOME-$HOME/.config}/bash/bashrc
+    elif [ -f ~/.bashrc ]; then
+      . ~/.bashrc
+    fi
+fi
+
+export ZDOTDIR="${XDG_CONFIG_HOME-$HOME/.config}/zsh"
+
+mesg n 2> /dev/null || true

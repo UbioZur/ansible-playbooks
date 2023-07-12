@@ -1,0 +1,12 @@
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+
+# Don't trigger error for the following (in the whole repository)
+skip_list:
+  # Role name <my-role> does not match ``^[a-z][a-z0-9_]*$`` pattern (due to the use of the '-')
+  - 'role-name'
+
+# Enable extra check that are opt-in
+enable_list:
+  - empty-string-compare # opt-in
+  - no-log-password # opt-in

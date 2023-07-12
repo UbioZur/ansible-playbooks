@@ -1,0 +1,29 @@
+---
+## ~  UbioZur - https://github.com/UbioZur  ~ ##
+
+## --------------------------------------- ##
+##          /!\ IMPORTANT /!\              ##
+##   ENCRYPT this file with ansible vault! ##
+##                                         ##
+##   DO NOT Commit this file to any git    ##
+## repository!                             ##
+## --------------------------------------- ##
+
+
+## ---------------------------------------
+## Variables for Open Media Vault root user
+## ---------------------------------------
+vault_omv_user:
+  pass: "Sup3R5ecreT"
+  pass_salt: "random_Charecter"
+  privkey: "~/.ssh/id_ed25519"
+  pubkey: "~/.ssh/id_ed25519.pub"
+  username: "root"
+
+
+## ---------------------------------------
+## Variables to Hide from the public view
+## ---------------------------------------
+
+vault_ssh_port: 22
+vault_domain_name: domain.tld
