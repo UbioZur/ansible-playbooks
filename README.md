@@ -29,7 +29,7 @@ cp vaul/sample.yml vault/main.yml
 
 ```console
 echo "MY_COMPLICATED_PASSWORD" > vault/.pass
-chomod 400 vault/.pass
+chmod 400 vault/.pass
 ansible-vault encrypt --vault-password-file vault/.pass vault/main.yml
 ```
 
