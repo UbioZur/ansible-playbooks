@@ -13,7 +13,7 @@ enable_list:
   - empty-string-compare # opt-in
   - no-log-password # opt-in
 
-# Exlude some files
+# Exclude some files
 exclude_paths:
   - .githooks/
   - .github/
